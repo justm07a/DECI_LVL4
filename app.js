@@ -3,7 +3,6 @@ const http = require('http');
 const express = require('express');
 const morgan = require('morgan');
 const mongoSanitize = require('express-mongo-sanitize');
-const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
@@ -19,27 +18,10 @@ require('./models/registration.model');
 require('./models/message.model');
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.set('io', io);
 
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(mongoSanitize());
-
-io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
-
-  socket.on('join-event', (eventId) => {
-    socket.join(eventId);
-    console.log(`Socket ${socket.id} joined room: ${eventId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
-  });
-});
 
 app.get('/health', async (req, res) => {
   const mongoose = require('mongoose');
@@ -65,14 +47,46 @@ app.use((req, res, next) => {
 
 app.use(errorHandler);
 
-async function start() {
-  await connectDB();
-  const PORT = process.env.PORT || 3000;
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+if (process.env.VERCEL !== '1') {
+  const server = http.createServer(app);
+  const { Server } = require('socket.io');
+  const io = new Server(server);
+
+  app.set('io', io);
+
+  io.on('connection', (socket) => {
+    console.log(`Client connected: ${socket.id}`);
+
+    socket.on('join-event', (eventId) => {
+      socket.join(eventId);
+      console.log(`Socket ${socket.id} joined room: ${eventId}`);
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`Client disconnected: ${socket.id}`);
+    });
   });
+
+  async function start() {
+    await connectDB();
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
+
+  start();
+
+  module.exports = { app, server };
+} else {
+  let connected = false;
+  app.use(async (req, res, next) => {
+    if (!connected) {
+      await connectDB();
+      connected = true;
+    }
+    next();
+  });
+
+  module.exports = app;
 }
-
-start();
-
-module.exports = { app, server };
