@@ -8,7 +8,7 @@ Backend API for an Event Management Platform built with Node.js, Express, MongoD
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose
 - **Real-time**: Socket.io
-- **Auth**: JWT + bcrypt
+- **Auth**: JWT + bcryptjs
 - **Validation**: express-validator
 - **Testing**: Jest + Supertest
 - **Docs**: Swagger UI
@@ -16,12 +16,12 @@ Backend API for an Event Management Platform built with Node.js, Express, MongoD
 ## Local Installation
 
 ```bash
-git clone https://github.com/username/StudentID-EventPulse.git
-cd StudentID-EventPulse
+git clone https://github.com/justm07a/DECI_LVL4.git
+cd DECI_LVL4
 npm install
 ```
 
-Create a `.env` file:
+Create a `.env` file (see `.env.example`):
 ```
 PORT=3000
 NODE_ENV=development
@@ -40,6 +40,7 @@ npm run dev
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
+| GET | /health | Health check | Public |
 | POST | /api/auth/register | Register a new user | Public |
 | POST | /api/auth/login | Login | Public |
 | GET | /api/events | List events (filter, pagination, search) | Public |
@@ -52,11 +53,11 @@ npm run dev
 | DELETE | /api/registrations/:id | Cancel registration | Auth |
 | POST | /api/announcements | Send announcement | Admin |
 | GET | /api/announcements/:eventId | Get announcements | Public |
-| GET | /health | Health check | Public |
+| GET | /api-docs | Swagger API Documentation | Public |
 
 ## Live Deployment
 
-[Deployment Link](https://your-vercel-url.vercel.app)
+[https://decilv4.vercel.app](https://decilv4.vercel.app)
 
 ## License
 

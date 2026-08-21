@@ -10,7 +10,7 @@ beforeAll(async () => {
     password: 'admin123',
   });
   adminToken = res.body.token;
-});
+}, 30000);
 
 afterAll(async () => {
   await mongoose.connection.close();
