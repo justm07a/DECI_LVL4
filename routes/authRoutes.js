@@ -3,6 +3,34 @@ const { body } = require('express-validator');
 const ctrl = require('../controllers/authController');
 const validate = require('../middleware/validate');
 
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Email already registered
+ *       422:
+ *         description: Validation error
+ */
 router.post(
   '/register',
   [
@@ -14,6 +42,32 @@ router.post(
   ctrl.register
 );
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful, token returned
+ *       401:
+ *         description: Invalid email or password
+ *       422:
+ *         description: Validation error
+ */
 router.post(
   '/login',
   [

@@ -79,14 +79,18 @@ if (process.env.VERCEL !== '1') {
 
   module.exports = { app, server };
 } else {
+  const mongoose = require('mongoose');
   let connected = false;
-  app.use(async (req, res, next) => {
-    if (!connected) {
+
+  const ensureDB = async (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
       await connectDB();
-      connected = true;
     }
     next();
-  });
+  };
+
+  app.use('/api', ensureDB);
+  app.use('/health', ensureDB);
 
   module.exports = app;
 }
