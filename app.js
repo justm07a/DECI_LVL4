@@ -25,12 +25,15 @@ app.use(mongoSanitize());
 
 app.get('/health', async (req, res) => {
   const mongoose = require('mongoose');
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  if (process.env.VERCEL === '1' && mongoose.connection.readyState !== 1) {
+    try { await connectDB(); } catch (e) {}
+  }
+  const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
   res.status(200).json({
     status: 'ok',
     environment: process.env.NODE_ENV,
     uptime: process.uptime(),
-    database: dbStatus,
+    database: states[mongoose.connection.readyState] || 'unknown',
   });
 });
 

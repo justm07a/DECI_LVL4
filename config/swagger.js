@@ -10,7 +10,7 @@ const options = {
     },
     servers: [
       {
-        url: 'https://decilv4.vercel.app',
+        url: 'https://decilvl4.vercel.app',
         description: 'Production server',
       },
       {
