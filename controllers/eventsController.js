@@ -27,16 +27,38 @@ exports.getEvents = asyncHandler(async (req, res, next) => {
   const limitNum = parseInt(limit) || 10;
   const skip = (pageNum - 1) * limitNum;
 
-  const allowedSortFields = ['date', 'capacity'];
+  const allowedSortFields = ['date', 'capacity', 'registrations'];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'date';
   const sortDirection = order === 'desc' ? -1 : 1;
-  const sort = { [sortField]: sortDirection };
 
-  const [data, total] = await Promise.all([
-    Event.find(filter).populate('category').populate('organizer', 'name email').sort(sort).skip(skip).limit(limitNum),
-    Event.countDocuments(filter),
+  const Registration = require('../models/registration.model');
+
+  const pipeline = [
+    { $match: filter },
+    { $lookup: { from: 'registrations', localField: '_id', foreignField: 'event', as: 'regList' } },
+    { $addFields: { registrationCount: { $size: '$regList' } } },
+    { $project: { regList: 0 } },
+    { $sort: { [sortField === 'registrations' ? 'registrationCount' : sortField]: sortDirection } },
+    { $skip: skip },
+    { $limit: limitNum },
+    { $lookup: { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' } },
+    { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+    { $lookup: { from: 'users', localField: 'organizer', foreignField: '_id', as: 'organizer' } },
+    { $unwind: { path: '$organizer', preserveNullAndEmptyArrays: true } },
+    { $project: { 'organizer.password': 0 } },
+  ];
+
+  const countPipeline = [
+    { $match: filter },
+    { $count: 'total' },
+  ];
+
+  const [data, countResult] = await Promise.all([
+    Registration ? Event.aggregate(pipeline) : Event.find(filter).populate('category').populate('organizer', 'name email').sort({ [sortField]: sortDirection }).skip(skip).limit(limitNum),
+    Registration ? Registration.aggregate(countPipeline) : Event.countDocuments(filter),
   ]);
 
+  const total = Array.isArray(countResult) ? (countResult[0]?.total || 0) : countResult;
   const totalPages = Math.ceil(total / limitNum);
 
   res.status(200).json({

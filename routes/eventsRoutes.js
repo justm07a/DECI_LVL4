@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const ctrl = require('../controllers/eventsController');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
@@ -53,7 +53,7 @@ const validate = require('../middleware/validate');
  *         name: sortBy
  *         schema:
  *           type: string
- *           enum: [date, capacity]
+ *           enum: [date, capacity, registrations]
  *       - in: query
  *         name: order
  *         schema:
@@ -192,6 +192,7 @@ router.patch(
   requireAuth,
   requireRole('admin'),
   [
+    param('id').isMongoId().withMessage('Invalid event ID'),
     body('category').optional().isMongoId().withMessage('Valid category ID is required'),
     body('date').optional().isISO8601().withMessage('Valid date is required'),
     body('capacity').optional().isInt({ min: 1 }).withMessage('Capacity must be a positive number'),
@@ -224,6 +225,13 @@ router.patch(
  *       404:
  *         description: Event not found
  */
-router.delete('/:id', requireAuth, requireRole('admin'), ctrl.deleteEvent);
+router.delete(
+  '/:id',
+  requireAuth,
+  requireRole('admin'),
+  [param('id').isMongoId().withMessage('Invalid event ID')],
+  validate,
+  ctrl.deleteEvent
+);
 
 module.exports = router;
