@@ -1,0 +1,229 @@
+
+🎟️
+Task 4
+☰
+🌙
+Contents
+Introduction
+Content Information
+Key Terminology
+Summary
+🎟️
+Backend Development – Node.js & Express
+Task 4
+Event Registration and Capacity Management
+Learn how to build a registration system for events. You will create endpoints that let a user register, view their registrations, and cancel a registration — while making sure an event never goes over its capacity and no one can register twice for the same event.
+
+In this task, we will build a system that lets attendees register for events, while the backend takes care of two important rules: an event cannot accept more people than its capacity, and the same attendee cannot register for the same event more than once (double registration).
+
+💡
+What are we building?
+A small set of API endpoints under /api/registrations that connect an
+attendee
+(the logged-in user) to an
+event
+. Every registration links exactly one user to exactly one event, and the backend must protect that relationship with proper checks before saving anything to the database.
+
+In this lesson, you will learn how to:
+
+Build a POST endpoint to register an attendee for an event
+Build a GET endpoint to list "my registrations"
+Build a DELETE endpoint to cancel a registration
+Enforce event capacity using countDocuments()
+Prevent double registration with a lookup and a unique index
+Protect every route with requireAuth
+Test the whole flow using Postman
+1. Register for an Event — POST /api/registrations
+This endpoint registers the currently logged-in attendee for a specific event. Before saving anything, the route runs through a chain of checks, in this order:
+
+Protected by requireAuth — only a logged-in attendee can call it.
+Check that the event exists — if not, return 404.
+Check that the attendee is not already registered for this event — if they are, return an error.
+Check that the current number of registrations has not reached the event's capacity — if it has, return a clear error.
+If every check passes, save the registration and return 201.
+JavaScript — registrations.controller.js (register)
+async function registerForEvent(req, res) {
+  const userId  = req.user.id;
+  const eventId = req.body.event;
+
+  const event = await Event.findById(eventId);
+  if (!event) {
+    return res.status(404).json({ message: 'Event not found' });
+  }
+
+  const existing = await Registration.findOne({
+    event: eventId,
+    attendee: userId
+  });
+  if (existing) {
+    return res.status(400).json({ message: 'You are already registered for this event' });
+  }
+
+  const currentCount = await Registration.countDocuments({ event: eventId });
+  if (currentCount >= event.capacity) {
+    return res.status(400).json({ message: 'This event is full' });
+  }
+
+  const registration = await Registration.create({
+    event: eventId,
+    attendee: userId
+  });
+
+  res.status(201).json(registration);
+}
+POST /api/registrations — 201 Created
+Registration created successfully.
+Response Body
+{
+  _id: 'reg_1029',
+  event: 'evt_501',
+  attendee: 'usr_204',
+  createdAt: '2026-08-05T10:12:00.000Z'
+}
+
+✓ 201 Created — attendee is now registered
+2. My Registrations — GET /api/registrations/my
+This endpoint returns the list of events that the currently logged-in user has registered for.
+
+Protected by requireAuth.
+Returns registrations that belong to this user only — never anyone else's.
+Uses populate() on the event field so the response includes full event details, not just the event ID.
+JavaScript — registrations.controller.js (my registrations)
+async function getMyRegistrations(req, res) {
+  const userId = req.user.id;
+
+  const registrations = await Registration
+    .find({ attendee: userId })
+    .populate('event');
+
+  res.status(200).json(registrations);
+}
+GET /api/registrations/my — 200 OK
+Response Body — populated event data
+[
+  {
+    _id: 'reg_1029',
+    attendee: 'usr_204',
+    event: { _id: 'evt_501', title: 'Career Fair', capacity: 50 }
+  }
+]
+
+✓ 1 registration returned — only for the current user
+3. Cancel Registration — DELETE /api/registrations/:id
+This endpoint cancels an existing registration.
+
+Protected by requireAuth.
+Check that the registration exists — if not, return 404.
+Check that the registration belongs to the current user — a user can never cancel someone else's registration.
+If both checks pass, delete the registration and return 200.
+JavaScript — registrations.controller.js (cancel)
+async function cancelRegistration(req, res) {
+  const userId = req.user.id;
+  const registrationId = req.params.id;
+
+  const registration = await Registration.findById(registrationId);
+  if (!registration) {
+    return res.status(404).json({ message: 'Registration not found' });
+  }
+
+  if (registration.attendee.toString() !== userId) {
+    return res.status(403).json({ message: 'You can only cancel your own registration' });
+  }
+
+  await registration.deleteOne();
+
+  res.status(200).json({ message: 'Registration cancelled successfully' });
+}
+DELETE /api/registrations/reg_1029 — 200 OK
+Registration cancelled successfully.
+Response Body
+{ message: 'Registration cancelled successfully' }
+⚠️
+Ownership check matters
+Without step 3, any logged-in user could cancel any registration just by guessing an ID. Always compare registration.attendee to req.user.id before deleting.
+
+4. Capacity Enforcement
+When a registration is created, the backend must count how many registrations already exist for that event, and compare that count to the event's capacity field.
+
+Use Registration.countDocuments({ event: eventId }) to count.
+If the count is already equal to or greater than the event's capacity, return a clear error saying the event is full.
+JavaScript — capacity check
+const currentCount = await Registration.countDocuments({ event: eventId });
+
+if (currentCount >= event.capacity) {
+  return res.status(400).json({ message: 'This event is full' });
+}
+POST /api/registrations — 400 Bad Request
+400 Bad Request — capacity reached.
+Response Body
+{ message: 'This event is full' }
+
+// currentCount (50) >= event.capacity (50) → registration blocked
+This guarantees the event's capacity can never be exceeded, no matter how many people try to register.
+
+5. Double Registration Prevention
+The backend must also make sure the same user cannot register for the same event more than once.
+
+Use Registration.findOne({ event: eventId, attendee: userId }) before creating a new registration.
+If a matching registration already exists, return a clear error.
+JavaScript — duplicate check
+const existing = await Registration.findOne({
+  event: eventId,
+  attendee: userId
+});
+
+if (existing) {
+  return res.status(400).json({ message: 'You are already registered for this event' });
+}
+POST /api/registrations — 400 Bad Request
+400 Bad Request — duplicate registration.
+Response Body
+{ message: 'You are already registered for this event' }
+💡
+Second layer of protection
+Besides the findOne check in the controller, the
+Registration Schema
+should also define a
+unique compound index
+on event and attendee together. Even if two requests arrive at almost the same moment, the database itself will reject the second one.
+
+JavaScript — registration.model.js (unique compound index)
+const registrationSchema = new mongoose.Schema({
+  event:    { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  attendee: { type: mongoose.Schema.Types.ObjectId, ref: 'User',  required: true }
+}, { timestamps: true });
+
+registrationSchema.index({ event: 1, attendee: 1 }, { unique: true });
+
+module.exports = mongoose.model('Registration', registrationSchema);
+Terminal — index created on server start
+Node.js Terminal
+✓ Unique index { event: 1, attendee: 1 } created on Registration collection
+// A second insert with the same event + attendee pair will now be rejected at the database level too
+Term	Definition
+requireAuth	A middleware function that checks a user is logged in before letting the request continue. Blocks the route if no valid session or token is found.
+Attendee	The logged-in user who is registering for an event. In the code, this is the user found via req.user.
+Capacity	A number stored on the Event model that defines the maximum number of people who can register for that event.
+countDocuments()	A Mongoose method that counts how many documents in a collection match a given filter, without returning the documents themselves.
+findOne()	A Mongoose method that returns the first document matching a filter, or null if nothing matches. Used here to detect an existing registration.
+populate()	A Mongoose method that replaces a reference field (like an ObjectId) with the actual document it points to, so related data can be read directly.
+Double Registration	A situation where the same user registers for the same event more than once. It must be blocked both in the controller and at the database level.
+Unique Compound Index	A database rule placed on more than one field together (here, event + attendee) that prevents the same combination of values from being saved twice.
+404 Not Found	An HTTP status code returned when the requested resource (event or registration) does not exist.
+400 Bad Request	An HTTP status code returned when the request breaks a business rule, such as a full event or a duplicate registration.
+403 Forbidden	An HTTP status code returned when the user is logged in but not allowed to perform this specific action, such as cancelling someone else's registration.
+🎯
+Key Takeaway
+The registration system rests on three protected endpoints —
+register
+,
+my registrations
+, and
+cancel
+— each guarded by requireAuth. The most important logic lives inside the register endpoint: it must check the event exists, block a second registration from the same attendee with findOne, and block registrations past capacity with countDocuments. A unique compound index on event + attendee backs up the duplicate check at the database level, so the rule holds even under concurrent requests. Together, these checks guarantee an event can never overfill and no attendee can ever register twice.
+
+📘
+Coming up next
+In the next task, we will add
+Real-Time Announcements
+using Socket.io. This will be explained in detail in a future advanced lesson.

@@ -1,0 +1,102 @@
+
+🎓
+Task 6
+☰
+🌙
+Contents
+Introduction
+Part 1 — Input Validation
+Part 2 — Central Error Handler
+Part 3 — Unit Testing with Jest
+Part 4 — Integration Testing
+Running Tests & Next Steps
+🧪
+Second Semester Final Project
+Task 6: Validation & Testing
+T6: Input Validation, Error Handling and Automated Testing
+Welcome! In Task 6, we are going to make our API production-ready by adding Input Validation across all routes, verifying centralized Error Handling, and writing automated Unit & Integration Tests.
+
+💡
+Core Goals
+Ensure invalid client inputs are caught before hitting controllers, handle database and application exceptions gracefully with consistent HTTP status codes, and build a reliable automated testing suite.
+
+We use express-validator to validate incoming request payloads before they reach the business logic.
+
+1. Validation Error Middleware
+Create a file named middleware/validate.js to collect and return validation errors:
+
+Extract errors using validationResult(req) from express-validator.
+If validation fails, return a 422 Unprocessable Entity response containing an array of invalid fields.
+If validation passes, call next() to move to the next handler.
+2. Route Validation Rules
+Apply specific validation chains across the following endpoints:
+
+POST /api/auth/register: name required, email must be valid format, password minimum 6 characters.
+POST /api/auth/login: email must be valid, password required.
+POST /api/events: title required, category must be a valid MongoId, date must be a valid date, capacity must be a positive number.
+PATCH /api/events/:id: id param must be a valid MongoId, all request body fields are optional.
+POST /api/registrations: eventId must be a valid MongoId.
+✅
+Expected Outcome
+Sending invalid payloads immediately halts processing and responds with HTTP status 422 and clear field-specific feedback.
+
+Verify that your error handler in middleware/errorHandler.js captures all runtime and database exceptions gracefully.
+
+Error Handling Matrix:
+Mongoose ValidationError: Respond with status 400 Bad Request.
+Mongoose CastError (invalid ID format): Respond with status 400 Bad Request.
+Duplicate Key Error (code 11000): Respond with status 409 Conflict.
+Custom AppError: Respond using the instance's designated statusCode.
+Unhandled Internal Errors: Respond with default status 500 Internal Server Error.
+⚠️
+Placement Rule
+Make sure app.use(errorHandler) is connected at the very end of app.js, strictly after all route definitions.
+
+Set up Jest to test core utility classes and middleware functions in isolation.
+
+1. Install Jest
+npm install --save-dev jest
+
+Create a basic jest.config.js configuration file.
+
+2. Test AppError Utility
+Create tests/unit/AppError.test.js and verify:
+
+new AppError("Not found", 404) produces statusCode = 404 and status = "fail".
+new AppError("Server error", 500) produces status = "error".
+isOperational property defaults to true.
+AppError is an instance of native JavaScript Error.
+3. Test asyncHandler Utility
+Create tests/unit/asyncHandler.test.js and verify:
+
+It correctly invokes the wrapped controller function with req, res, and next parameters.
+If the wrapped function throws or rejects an error, asyncHandler catches it and passes it to next().
+Test full API request-response cycles against HTTP endpoints using Supertest.
+
+1. Install Supertest
+npm install --save-dev supertest
+
+2. Create Integration Suite
+Create tests/integration/events.test.js and write tests for:
+
+GET /api/events: Returns status 200 OK and an array of events.
+Unauthenticated Write: POST /api/events without a JWT token returns 401 Unauthorized.
+Validation Failure: POST /api/events with missing required fields returns 422 Unprocessable Entity.
+💡
+Rubric Requirement
+Your integration suite must contain at least
+3 passing tests
+to meet rubric criteria.
+
+Execution Command:
+Run your test suite via terminal:
+
+npm test
+
+✅
+Success Checklist
+You should see at least 3 green passing test suites in your terminal output.
+
+🎯
+What's Next?
+In the 7th and final task, we will deploy our API to Vercel + MongoDB Atlas, set up Git workflow tags, and write the project documentation. See you in the next video!

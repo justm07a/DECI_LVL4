@@ -1,0 +1,120 @@
+
+🎓
+Task 7
+☰
+🌙
+Contents
+Introduction
+Part 1 — MongoDB Atlas Cloud DB
+Part 2 — Health Check Endpoint
+Part 3 — Deployment on Vercel
+Part 4 — Swagger API Docs
+Part 5 — Postman Collection
+Part 6 — Git Workflow & Release
+Part 7 — README.md Documentation
+Part 8 — Final Submission Checklist
+🚀
+Second Semester Final Project
+Task 7: Deployment & Git Workflow
+T7: Deployment, Documentation and Git Workflow
+We have arrived at the final task! In Task 7, we will deploy our API live to Vercel, connect it to a cloud database on MongoDB Atlas, document all endpoints, and prepare a professional submission.
+
+💡
+Core Goals
+Host your API publicly, establish automated API documentation (Swagger + Postman), organize your Git history with release tags, and publish a comprehensive project README.
+
+Before deploying the API code, you need a cloud-hosted MongoDB database:
+
+Navigate to cloud.mongodb.com and create a free account.
+Create a new cluster using the M0 Free Tier.
+Set up a Database User with a username and password.
+In Network Access, add IP entry 0.0.0.0/0 to allow connection requests from Vercel's dynamic IP ranges.
+Copy the generated MongoDB connection string — this will serve as your MONGO_URI environment variable.
+✅
+Security Checklist
+Ensure your database credentials inside the connection string are kept secret and never checked into version control.
+
+Add a dedicated health monitoring route inside app.js prior to deployment:
+
+Endpoint Specification:
+GET /health
+
+Response Criteria:
+Returns HTTP Status 200 OK with status: "ok".
+Includes runtime metadata: environment type (NODE_ENV), server uptime, and database connection status.
+💡
+Deployment Benefit
+The health endpoint provides a fast, lightweight way to verify server uptime and database connectivity on your live domain.
+
+Deploy your Node.js application to Vercel's serverless platform.
+
+1. Create vercel.json in Root Directory
+Configure Vercel serverless build rules:
+
+version: 2
+builds: [{ "src": "app.js", "use": "@vercel/node" }]
+routes: [{ "src": "/(.*)", "dest": "app.js" }]
+2. Deploy via Vercel Dashboard
+Sign in to vercel.com using your GitHub account.
+Click New Project and import your GitHub repository.
+Add required Environment Variables:
+MONGO_URI, JWT_SECRET, NODE_ENV=production
+Click Deploy.
+✅
+Live Testing
+Once deployment completes, open your live Vercel URL and test /health to confirm operational status.
+
+Integrate interactive OpenAPI / Swagger documentation directly into your server.
+
+1. Install Required Packages
+npm install swagger-jsdoc swagger-ui-express
+
+2. Mount Swagger UI
+Configure Swagger definition options and mount UI on /api-docs.
+Document at minimum the Auth and Events endpoints.
+Each documented endpoint must clearly show: HTTP Method, URL Path, Request Body parameters, and expected HTTP Responses.
+🎯
+Verification
+Navigate to https://your-deployment-url/api-docs in your browser to verify interactive testing UI loads correctly.
+
+Export a structured Postman collection to simplify testing for external evaluators:
+
+Requirements:
+Create an Environment named EventPulse Dev containing variables: baseUrl = http://localhost:3000 and token.
+Organize requests into dedicated folders: Auth, Events, Registrations, and Announcements.
+Include sample request body payloads and saved response examples for every route.
+Export the Collection as JSON and save it under the postman/ folder inside your repository.
+Maintain a clean, structured version control history using standard Git conventions:
+
+Requirements:
+Follow Conventional Commits formatting (e.g., feat:, fix:, docs:, test:).
+At least one clean commit per completed task.
+Create an annotated release tag:
+git tag -a v1.0.0 -m "Release v1.0.0"
+Push tag to remote:
+git push origin v1.0.0
+Open a Pull Request on GitHub from your feature/release branch into main.
+✅
+Professional Standard
+A well-maintained Git tree and formal PR submission demonstrate enterprise-ready workflow habits.
+
+Construct a comprehensive README.md file in your project root containing:
+
+Project Title & Brief Description: High-level overview of EventPulse API.
+Tech Stack: Node.js, Express, MongoDB, Socket.io, Jest, Supertest.
+Local Installation Steps: Instructions covering git clone, npm install, .env setup, npm run seed, and npm run dev.
+API Endpoint Summary Table: Listing HTTP Method, Endpoint Path, and Brief Description.
+Live Deployment Link: Working URL pointing to your deployed Vercel application.
+Before submitting your final project link, verify all criteria below:
+
+✅
+Pre-Submission Checklist
+Project repository name follows naming standard: StudentID-EventPulse.
+GitHub repository visibility is set to
+Public
+.
+Live Vercel deployment link is active and responds on /health.
+Your local .env file is listed in .gitignore and NOT pushed to GitHub.
+🎉
+Congratulations!
+If you have reached this stage and verified all endpoints, you now possess a complete, production-grade Backend API in your portfolio! This project encompasses everything covered throughout the second semester — from Authentication to Real-Time WebSockets, Testing, and Cloud Deployment. Best of luck with your final evaluation!

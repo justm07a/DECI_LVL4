@@ -1,0 +1,92 @@
+
+🎓
+Task 5
+☰
+🌙
+Contents
+Introduction
+Part 1 — Socket.io Setup
+Part 2 — Socket Rooms
+Part 3 — Sending Announcements
+Part 4 — Announcement History
+Testing and Next Steps
+📡
+Second Semester Final Project
+Task 5: Socket.io Integration
+T5: Real-Time Announcements with Socket.io
+Welcome! In this task, we will add the real-time feature to our project.
+
+This feature allows the Admin to send live announcements directly to attendees registered for a specific event.
+
+💡
+Task Goal
+Enable instantaneous, bi-directional communication between the server and connected clients without needing manual page refreshes.
+
+First, we need to install Socket.io and attach it to our Express server.
+
+1. Install Socket.io
+Run the following command in your server terminal:
+
+npm install socket.io
+
+2. Modify app.js (or server.js)
+To integrate Socket.io properly with Express, replace your standard app.listen() call with Node's HTTP server wrapper:
+
+Import http and create a server: http.createServer(app).
+Initialize Socket.io: new Server(httpServer).
+Listen for new connections using io.on("connection") and log the connected socket.id in the console.
+Handle the disconnect event to track when a user leaves.
+✅
+Verification
+When a client connects, the terminal should print the unique socket.id, confirming active WebSocket connectivity.
+
+To prevent broadcasting announcements to all connected users across the platform, every event gets its own isolated Room in Socket.io.
+
+Attendees automatically join the room corresponding to the event they are viewing or registered for:
+
+Implementation Flow:
+On the Client: Emit a join event when viewing the event page:
+socket.emit("join-event", eventId)
+On the Server: Listen for the join event and assign the socket to that room:
+socket.on("join-event", (eventId) => socket.join(eventId))
+🎯
+Why use Rooms?
+Rooms ensure targeted broadcasting so that announcements sent for Event A only reach members inside Event A's room.
+
+Build the endpoint that allows admins to post and broadcast announcements:
+
+Endpoint Specification:
+POST /api/announcements — Admin-only route.
+
+Requirements:
+Protected using requireAuth and requireRole("admin") middlewares.
+Extracts eventId and text from the request body.
+Persists the announcement record to MongoDB using the Message model.
+Emits the saved announcement in real-time to the event room:
+io.to(eventId).emit("announcement", message)
+⚠️
+Important Developer Note
+You must pass or attach the io instance to your controller (e.g., via req.app.get("io") or controller parameter) so the endpoint can trigger real-time socket events during HTTP requests.
+
+Build an endpoint to fetch past announcements so users joining an event room late don't miss previous messages:
+
+Endpoint Specification:
+GET /api/announcements/:eventId
+
+Requirements:
+Public Endpoint: Anyone can read the announcement history.
+Returns all messages linked to eventId, sorted chronologically from oldest to newest.
+Uses Mongoose's populate() on the sender field to populate sender details (e.g., admin name/email).
+✅
+User Experience Benefit
+Late joiners receive immediate context by loading past history over HTTP before listening for new socket broadcasts.
+
+How to Test Your Implementation:
+Once completed, open two browser tabs (or Postman + a web page):
+
+Tab 1 (Attendee): Connect to the socket and join an event room.
+Tab 2 (Admin): Send a POST /api/announcements request.
+Result: The announcement should instantly display in Tab 1 without refreshing!
+🚀
+What's Next?
+In Task 6, we will cover Input Validation, Centralized Error Handling, and Automated Unit/Integration Testing. See you in the next video!

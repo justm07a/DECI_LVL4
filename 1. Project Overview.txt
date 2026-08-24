@@ -1,0 +1,98 @@
+
+📡
+Final Project
+☰
+🌙
+Contents
+Introduction
+What Is EventPulse?
+What You Will Build
+What Makes This Project Special
+How Will You Be Evaluated?
+Tips Before You Start
+📡
+Second Semester Final Project
+Backend API
+EventPulse API — Project Overview
+Welcome to your second-semester final project! Throughout this semester we learned a lot together — Authentication and JWT, Mongoose, API Versioning, Validation, Socket.io, Testing, and Deployment. Now it is time to apply everything in one complete, real-world project.
+
+This project is called EventPulse — a Backend API for an event management platform. You will build the entire server side from scratch and hand it over ready for production.
+
+💡
+Why this project matters
+EventPulse is not just an exercise — it brings together every skill you practiced this semester into a single, portfolio-ready application that you build, test, and deploy yourself.
+
+Imagine you want to build a platform like Eventbrite or Meetup — people can browse events, register for them, and receive real-time announcements from organizers.
+
+This platform needs:
+
+A secure registration and login system using JWT.
+Event management with categories, cities, and dates.
+An event registration system with capacity management.
+Instant announcements powered by Socket.io.
+Documentation with Swagger and Postman.
+Deployment on Vercel with MongoDB Atlas.
+The project is divided into 7 Tasks — each Task builds one part of the platform:
+
+Task 1 — Project Architecture and Data Models
+A complete MVC folder structure.
+Mongoose schemas for User, Event, Category, Registration, and Message.
+A database seed script with sample data.
+Task 2 — Authentication and Role-Based Authorization
+Register and Login using bcrypt and JWT.
+requireAuth and requireRole middleware.
+Two roles: admin and attendee.
+Task 3 — Events API with Advanced Features
+Full CRUD on Events.
+Filtering by category, city, and date.
+Pagination, sorting, and text search.
+Task 4 — Event Registration and Capacity Management
+Registering for events and canceling registration.
+Capacity enforcement — you cannot exceed the limit.
+Preventing double registration.
+Task 5 — Real-Time Announcements with Socket.io
+Admins send live announcements to attendees.
+Each event has its own dedicated room.
+Announcements are saved in the database.
+Task 6 — Validation, Error Handling, and Testing
+express-validator on every POST and PATCH route.
+A central error-handling middleware.
+Unit and integration tests with Jest and Supertest.
+Task 7 — Deployment, Documentation, and Git
+Deployment on Vercel with MongoDB Atlas.
+A health endpoint, Swagger UI, and a Postman Collection.
+A Git workflow using Conventional Commits.
+Task	Focus Area
+Task 1	Project Architecture and Data Models
+Task 2	Authentication and Role-Based Authorization
+Task 3	Events API with Advanced Features
+Task 4	Event Registration and Capacity Management
+Task 5	Real-Time Announcements with Socket.io
+Task 6	Validation, Error Handling, and Testing
+Task 7	Deployment, Documentation, and Git
+This project is not just an exercise — it is a real project you will add to your portfolio. When someone asks you, "What is the biggest project you have built?" you will tell them about EventPulse and show them the deployment link.
+
+EventPulse also covers everything you learned this second semester:
+
+Week	Topic	Related Task
+Week 13	Authentication and JWT	Task 2
+Week 14	Advanced Mongoose	Task 3
+Week 15	Input Validation	Task 6
+Week 16	Socket.io	Task 5
+Week 17	Testing	Task 6
+Week 18	Deployment	Task 7
+Week 19	Case Study Workflow + API Docs	Tasks 1 & 7
+Each Task is broken down into small Sub-Tasks. Every Sub-Task earns (1) point if implemented correctly, and (0) if it is missing or incorrect.
+
+⚠️
+No partial credit
+There are no half points — a Sub-Task either works or it does not. This is why it is important to test everything yourself on the deployment link before you submit.
+
+Read the full Rubric before writing any code, so you understand exactly what is required.
+Work through the Tasks in order — Task 1 is the foundation everything else is built on.
+Commit after every Task — not only at the very end.
+Test every feature on Postman before moving on, so you are not surprised at the end.
+Your project name matters — it must follow the format Student-ID-EventPulse. For example: 12345-EventPulse.
+🎯
+Key Takeaway
+That covers the full EventPulse API project overview. In the next lessons, we will explain each Task in detail and clarify exactly what is required from you and how you will be evaluated. See you in the next lesson.

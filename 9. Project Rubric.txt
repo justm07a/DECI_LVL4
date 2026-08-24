@@ -1,0 +1,397 @@
+
+🎓
+Project Rubric
+☰
+🌙
+Contents
+Introduction
+Task 1 — Architecture and Data Models
+Task 2 — Authentication and Authorization
+Task 3 — Events API
+Task 4 — Registration and Capacity
+Task 5 — Real-Time Announcements
+Task 6 — Validation, Errors and Testing
+Task 7 — Deployment and Git Workflow
+Evaluation Summary
+🎓
+Second Semester Final Project
+V1: Rubric Explanation
+Project Rubric Explanation — EventPulse API
+Welcome to the first lesson explaining the Project Rubric for the second semester.
+
+This project is named EventPulse — a Backend API for an Event Management Platform.
+
+In these lessons, we will explain what is required of you in each Task and how you will be evaluated.
+
+💡
+Remember how evaluation works?
+Each Sub-Task is evaluated independently — if you implement the requirements fully and correctly, you will get (1); if something is missing or incorrect, you will get (0).
+
+Task 1 is the foundation of the entire project — here you build the folder structure and create the Schemas.
+
+First: The MVC Folder Structure
+Requirement: Create a Node.js project, install the required packages, and create these folders:
+
+models/ — contains the Schemas.
+controllers/ — contains the business logic.
+routes/ — contains the routes.
+middleware/ — contains the middlewares.
+utils/ — contains helpers like AppError and asyncHandler.
+config/ — contains configuration files.
+✅
+You get (1) if
+The project name correctly follows the naming convention, all 6 folders exist, and the MVC separation is clear.
+
+❌
+You get (0) if
+The file name is incorrect, any folder is missing, or the code is unorganized.
+
+Second: The Mongoose Schemas
+Requirement: Create a separate Schema for each of these models: User, Event, Category, Registration, Message.
+
+Every Schema must include validation for required fields and proper data types.
+
+✅
+You get (1) if
+All 5 Schemas exist, each model is in a separate file, and required fields are validated at the Schema level.
+
+❌
+You get (0) if
+Any Schema is missing or lacks validation.
+
+Third: Relationship Between Events and Categories
+Requirement: The category field in the Event Schema must be an ObjectId Reference to the Category model — not plain text.
+
+When fetching events, use populate() to return full category details.
+
+✅
+You get (1) if
+Category is stored as an ObjectId Reference, and requesting a specific event returns full category details.
+
+❌
+You get (0) if
+Category is stored as text, or populate() is not used.
+
+Fourth: Database Connection and Configuration
+Requirement: The connection string must be stored in an environment variable — not hardcoded in the code.
+
+A .env file exists containing MONGO_URI, and a .env.example file exists for documentation.
+
+The .env file is ignored in .gitignore and not pushed to GitHub.
+
+✅
+You get (1) if
+The connection string is in an environment variable, and .env is ignored.
+
+❌
+You get (0) if
+The connection string is hardcoded in the code, or .env is pushed to GitHub.
+
+Fifth: The Seed Script
+Requirement: A script that seeds the database with sample data — categories like Music, Tech, Sports, sample events, and an admin user.
+
+✅
+You get (1) if
+Running the script populates the database with this data, and the admin user can log in.
+
+❌
+You get (0) if
+The script does not work or data is missing.
+
+Task 2 is building the Authentication and Authorization system.
+
+First: Registration Endpoint
+Requirement: Registration endpoint that saves the password encrypted using bcrypt — never in plain text.
+
+It must also prevent duplicate email registrations.
+
+✅
+You get (1) if
+The password is saved encrypted, and attempting to register with an existing email returns an error.
+
+❌
+You get (0) if
+The password is stored in plain text, or you can register with the same email twice.
+
+Second: Login Endpoint
+Requirement: Login endpoint that validates the password and returns a JWT containing user ID and role.
+
+✅
+You get (1) if
+Correct credentials return a token, while wrong credentials return an authentication error and no token.
+
+❌
+You get (0) if
+Login returns a token even if the password is incorrect.
+
+Third: requireAuth Middleware
+Requirement: Middleware that verifies the token on protected routes and attaches user data to the request object.
+
+✅
+You get (1) if
+A request without a token to a protected route returns 401, an expired or modified token returns an error, and a request with a valid token reaches the controller with user data attached to req.user.
+
+❌
+You get (0) if
+There is no token verification, or user data is not attached to the request.
+
+Fourth: requireRole Middleware and RBAC
+Requirement: Middleware that distinguishes between admin and attendee roles, protecting create, update, and delete event routes so only admins can access them.
+
+✅
+You get (1) if
+An attendee trying to create, update, or delete an event gets a 403 response, while an admin can perform these actions without issues.
+
+❌
+You get (0) if
+Any user can perform CRUD operations on events regardless of their role.
+
+Task 3 is building the complete Events API along with Advanced Query Features.
+
+First: CRUD Endpoints
+Requirement: Build the 5 core endpoints — Create, List, Show, Update, Delete.
+
+Write endpoints (Create, Update, Delete) are protected by requireAuth and requireRole("admin").
+
+✅
+You get (1) if
+All 5 endpoints work and return correct status codes, and write endpoints are protected.
+
+❌
+You get (0) if
+Any endpoint is missing or unprotected.
+
+Second: Filtering
+Requirement: Events API supports filtering by:
+
+?category=ID — filter by category.
+?city=Cairo — filter by city.
+?startDate=2024-01-01&endDate=2024-12-31 — filter by date range.
+Each filter is optional, and they can be combined in a single request.
+
+✅
+You get (1) if
+Each filter returns correct results on its own, and combining them narrows down results correctly.
+
+❌
+You get (0) if
+Any filter does not work or combined filtering returns incorrect results.
+
+Third: Pagination and Sorting
+Requirement: The API supports ?page=1&limit=10 for pagination, returning in response: total, page, limit, totalPages.
+
+It also supports sorting by:
+
+?sortBy=date — sort by date.
+?sortBy=registrations — sort by number of registrations.
+✅
+You get (1) if
+The response respects requested page and limit parameters, and returns complete metadata.
+
+❌
+You get (0) if
+Pagination is missing or metadata is incomplete.
+
+Fourth: Text Search
+Requirement: ?search=keyword searches event title and description in a case-insensitive manner.
+
+Search works alongside filtering and pagination simultaneously.
+
+✅
+You get (1) if
+Searching for a word in the title returns the correct result, and searching for a word in the description also returns the correct result.
+
+❌
+You get (0) if
+Search is not functional or searches only in title.
+
+Task 4 is building the event registration system along with capacity management.
+
+First: Registration Endpoint
+Requirement: An endpoint allowing a logged-in attendee to register for a specific event.
+
+The registration record is linked to both user and event.
+
+✅
+You get (1) if
+The registration record is created and correctly linked to user and event.
+
+❌
+You get (0) if
+The endpoint is unprotected or registration is not linked to user.
+
+Second: My Registrations and Cancellation
+Requirement:
+
+GET /api/registrations/my — returns events the current user is registered for, with details of each event.
+DELETE /api/registrations/:id — cancels a specific registration, but only belonging to the current user.
+✅
+You get (1) if
+The endpoint returns only authenticated user registrations, event details are included in each registration, and the user can only cancel their own registration.
+
+❌
+You get (0) if
+It returns registrations for all users, or a user can cancel someone else's registration.
+
+Third: Capacity Management and Double Registration Prevention
+Requirement:
+
+If an event reaches specified capacity — registration is rejected with a clear error message.
+If the same user attempts to register for the same event twice — registration is rejected.
+✅
+You get (1) if
+Registration is rejected when event reaches capacity with a clear message, total registrations do not exceed capacity, and duplicate registration attempts return an error.
+
+❌
+You get (0) if
+Registrations exceed capacity, or the same user can register twice.
+
+Task 5 is adding real-time features to EventPulse using Socket.io.
+
+First: Socket.io Connection Setup
+Requirement: Install and configure Socket.io on the server, and handle connection and disconnection events.
+
+✅
+You get (1) if
+The client connects to server successfully and logs in terminal, and disconnection is also logged.
+
+❌
+You get (0) if
+Socket.io is not functional or connection is unverified.
+
+Second: Rooms and Broadcasting
+Requirement: Each event has a dedicated Room. Attendees join the Room of the event they registered for. Admin sends announcement to a specific event room — announcement reaches members of that room only.
+
+✅
+You get (1) if
+Announcement reaches attendees of specified event only, and attendees of other events do not receive it.
+
+❌
+You get (0) if
+Announcement reaches all connected users regardless of event.
+
+Third: Persisting Announcements and Fetching History
+Requirement:
+
+Every announcement is stored in database via Message model with event, sender, and timestamp.
+Endpoint returns announcement history for a specific event — allowing late joiners to view previous messages.
+✅
+You get (1) if
+Every announcement is saved properly, and users joining late can view message history.
+
+❌
+You get (0) if
+Announcements are not saved, or history endpoint is missing.
+
+Task 6 covers 3 vital areas — Validation, Error Handling, and Testing.
+
+First: Input Validation
+Requirement: All POST and PATCH routes have express-validator rules. Validation errors return response with 422 status and list of invalid fields.
+
+✅
+You get (1) if
+All POST and PATCH routes contain validation, and invalid data requests return 422 with an error list.
+
+❌
+You get (0) if
+Routes lack validation, or error response format is unorganized.
+
+Second: Central Error Handling
+Requirement:
+
+AppError class and asyncHandler utility present in utils folder.
+Central error middleware hooked at end of application.
+All errors route to central middleware and return response with clear message and correct status code.
+✅
+You get (1) if
+All controller errors flow to central middleware, and error response structure is consistent.
+
+❌
+You get (0) if
+Errors are not handled centrally, or response format is inconsistent.
+
+Third: Unit and Integration Tests
+Requirement:
+
+Unit tests for AppError: covers success and failure cases.
+Unit tests for asyncHandler: covers success and failure cases.
+Integration tests for Events API using Supertest: covers creating event, fetching event, and validation.
+At least 3 tests pass.
+✅
+You get (1) if
+Unit tests cover success/failure for both utilities, integration tests cover basic Events CRUD, and at least 3 tests pass successfully.
+
+❌
+You get (0) if
+No tests exist, or tests exist but all fail.
+
+Seventh and final task — Deployment, Documentation, and Git Workflow.
+
+First: Deployment on Vercel
+Requirement: Database hosted on MongoDB Atlas, API deployed on Vercel with environment variables configured on the platform.
+
+✅
+You get (1) if
+Deployment link opens and responds to requests, and API successfully connects to MongoDB Atlas.
+
+❌
+You get (0) if
+Deployment fails or API does not function on live deployment link.
+
+Second: Health Endpoint
+Requirement: GET /health returns response confirming server is running and showing database status.
+
+✅
+You get (1) if
+The /health endpoint returns successful response on deployment link, confirming database status.
+
+❌
+You get (0) if
+The /health endpoint is missing or non-functional on live deployment link.
+
+Third: Git Workflow
+Requirement:
+
+Commits follow Conventional Commits format — feat:, fix:, docs:.
+Release tag v1.0.0 present in repository.
+Open Pull Request describing the project.
+✅
+You get (1) if
+Commit history is structured and follows required format, tag v1.0.0 exists, and Pull Request is open.
+
+❌
+You get (0) if
+Commits are unstructured, release tag is missing, or Pull Request is absent.
+
+Fourth: Sharing the Project
+Requirement: Push repository to GitHub and share live deployment link — both with review access.
+
+✅
+You get (1) if
+Repository and deployment link are available for review.
+
+❌
+You get (0) if
+Repository is private or deployment link does not work.
+
+Now that we reviewed all Tasks — let me clarify the evaluation method in detail.
+
+The project is evaluated based on Sub-Tasks. Each Sub-Task is evaluated independently — either (1) or (0) — no partial credit.
+
+✅
+You get (1) if
+You fulfilled requirements completely as specified.
+The feature is verified working on the live deployment link.
+Code is well-organized with no obvious bugs.
+❌
+You get (0) if
+Implementation is incomplete or differs from requirements.
+Feature is non-functional or throws errors when tested.
+Sub-Task is completely missing from project.
+💡
+Before Submission
+Before submitting your project — test each Sub-Task yourself on the live deployment link, verifying everything functions properly.
+
+🎯
+Conclusion
+This concludes the complete Project Rubric explanation for EventPulse API. This project is your opportunity to demonstrate everything learned throughout the second semester in a real, integrated application. Run your project, test it, and submit with confidence. Best of luck!

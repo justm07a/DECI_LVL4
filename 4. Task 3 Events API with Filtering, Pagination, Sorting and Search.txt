@@ -1,0 +1,203 @@
+
+🗓️
+T3
+☰
+🌙
+Contents
+Introduction
+Content Information
+Key Terminology
+Summary
+🗓️
+Node.js & Express & MongoDB
+T3
+Events API with Filtering, Pagination, Sorting and Search
+In this task, we will build the full Events API for our application. This means writing the routes and controller logic that let the frontend create events, list them, view a single event, update it, and delete it.
+
+But a real Events API is not just plain CRUD. Users need to be able to filter events by category, city, or date range, search for events by keyword, sort results by date or popularity, and browse results page by page instead of loading everything at once. This lesson covers all of these features together, the way they work in a real production API.
+
+💡
+What you will build
+A set of Express routes under /api/events backed by a Mongoose Event model, where the main list endpoint supports filtering, pagination, sorting, and text search — all combined together in a single, safe query.
+
+In this lesson, you will learn how to:
+
+Build the five core CRUD endpoints for events
+Protect write endpoints with requireAuth and requireRole("admin")
+Filter events by category, city, and a date range
+Add pagination using page and limit
+Add sorting with a safe whitelist of allowed fields
+Add case-insensitive text search with $regex
+Use populate() to return full category and organizer details
+Keep every response in one consistent shape
+1. CRUD Endpoints
+First, build the routes and controller for the Events resource. Every endpoint returns data in the same consistent response shape, so the frontend always knows what to expect.
+
+Method	Endpoint	Description	Access
+GET	/api/events	List events with filtering, pagination, and sorting	Public
+GET	/api/events/:id	Get one event, populated with category and organizer	Public
+POST	/api/events	Create a new event	Admin only
+PATCH	/api/events/:id	Update an existing event	Admin only
+DELETE	/api/events/:id	Delete an event	Admin only
+⚠️
+Protect the write endpoints
+POST, PATCH, and DELETE must be protected with requireAuth to confirm the user is logged in, and requireRole("admin") to confirm they are an admin. Anyone can read events, but only admins can change them.
+
+routes/events.routes.js
+const router = require('express').Router();
+const { requireAuth, requireRole } = require('../middlewares/auth');
+const ctrl = require('../controllers/events.controller');
+
+router.get('/', ctrl.getEvents);
+router.get('/:id', ctrl.getEventById);
+router.post('/', requireAuth, requireRole('admin'), ctrl.createEvent);
+router.patch('/:id', requireAuth, requireRole('admin'), ctrl.updateEvent);
+router.delete('/:id', requireAuth, requireRole('admin'), ctrl.deleteEvent);
+
+module.exports = router;
+Response shape used across the API
+Single item response
+{ status: 'success', data: { ...event } }
+List response
+{
+  status: 'success',
+  total: 42,
+  page: 1,
+  limit: 10,
+  totalPages: 5,
+  data: [ ...events ]
+}
+2. Filtering
+GET /api/events supports these optional query params for filtering:
+
+Query Param	Example	Effect
+category	?category=64f0...	Filters events by category ID
+city	?city=Cairo	Filters events by city
+startDate / endDate	?startDate=2024-01-01&endDate=2024-12-31	Filters events inside a date range
+Every filter is optional. If the user sends more than one filter at the same time, they are all combined together — an event must match every filter that was sent.
+
+controllers/events.controller.js — building the filter object
+const filter = {};
+
+if (category) filter.category = category;
+if (city) filter.city = city;
+
+if (startDate || endDate) {
+  filter.date = {};
+  if (startDate) filter.date.$gte = new Date(startDate);
+  if (endDate)   filter.date.$lte = new Date(endDate);
+}
+filter object when city=Cairo only
+console.log(filter)
+{ city: 'Cairo' }
+// category and date range are skipped — they were not sent
+3. Pagination
+GET /api/events supports:
+
+?page=1 — page number, default: 1
+?limit=10 — results per page, default: 10
+The response must include total, page, limit, totalPages, and data. The number of documents to skip is calculated with the formula: skip = (page - 1) * limit.
+
+controllers/events.controller.js — pagination
+const pageNum  = parseInt(page)  || 1;
+const limitNum = parseInt(limit) || 10;
+const skip     = (pageNum - 1) * limitNum;
+
+const [data, total] = await Promise.all([
+  Event.find(filter).skip(skip).limit(limitNum),
+  Event.countDocuments(filter)
+]);
+
+const totalPages = Math.ceil(total / limitNum);
+page=2&limit=5 — with 12 total matching events
+Calculated values
+page: 2
+limit: 5
+skip: 5 // (2 - 1) * 5
+total: 12
+totalPages: 3
+
+✓ data contains events number 6 to 10
+4. Sorting
+GET /api/events supports:
+
+?sortBy=date — sort by the event date
+?sortBy=registrations — sort by number of registrations
+?order=asc or ?order=desc — sort direction, default: asc
+Build a whitelist of allowed sortBy fields to protect the API — never pass the raw query value straight into the sort object.
+
+controllers/events.controller.js — safe sorting
+const allowedSortFields = ['date', 'registrations'];
+const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'date';
+const sortDirection = order === 'desc' ? -1 : 1;
+
+const sort = { [sortField]: sortDirection };
+sortBy=notAField&order=desc
+console.log(sort)
+{ date: -1 }
+// "notAField" is not in the whitelist, so Prisma falls back to "date"
+5. Text Search
+?search=keyword searches inside title and description, in a case-insensitive way, using $regex. Search works together with filtering and pagination at the same time.
+
+controllers/events.controller.js — search
+if (search) {
+  filter.$or = [
+    { title:       { $regex: search, $options: 'i' } },
+    { description: { $regex: search, $options: 'i' } }
+  ];
+}
+search=WORKSHOP
+Matching behaviour
+✓ "Frontend Workshop" — matches (case-insensitive)
+✓ "Join our design workshop" — matches inside description
+✕ "Career Fair" — does not match
+📘
+Advanced Search
+Using $regex for search is simple and works well for small and medium collections. Using MongoDB text indexes or full-text search engines for large collections will be explained in detail in a future advanced lesson.
+
+6. populate() on category and organizer
+An event document only stores the category and organizer fields as ObjectId references. Use populate() so the response contains the full related document instead of just the raw ID.
+
+controllers/events.controller.js — populate
+// GET /api/events
+const data = await Event.find(filter)
+  .populate('category')
+  .sort(sort)
+  .skip(skip)
+  .limit(limitNum);
+
+// GET /api/events/:id
+const event = await Event.findById(id)
+  .populate('category')
+  .populate('organizer');
+Without populate vs with populate
+Without populate()
+category: '64f0a1b2c3d4e5f678901234'
+With populate('category')
+category: { _id: '64f0a1b2c3d4e5f678901234', name: 'Workshops' }
+Term	Definition
+Query String	The part of a URL after the ?, made of key-value pairs like ?city=Cairo&page=2, used to send optional options to a GET request.
+Filtering	Narrowing down results so only records matching one or more conditions are returned.
+Pagination	Splitting a large result set into smaller pages, loaded one at a time, instead of returning everything at once.
+skip / limit	skip tells the database how many documents to jump over; limit tells it the maximum number of documents to return. Together they produce one page of results.
+Sorting	Ordering the results by a specific field, either ascending (asc) or descending (desc).
+Whitelist	A fixed list of allowed values. Used here to make sure sortBy only accepts safe, known field names instead of any string the client sends.
+$regex	A MongoDB operator used to match text fields against a pattern, enabling partial text search.
+Case-insensitive	A search that treats uppercase and lowercase letters as the same, so "Workshop" and "workshop" both match.
+populate()	A Mongoose method that replaces a referenced ObjectId field with the full document it points to.
+ObjectId	MongoDB's unique identifier type, used as the value of the _id field and for reference fields like category.
+requireAuth	A middleware that checks the request has a valid logged-in user before allowing it to continue.
+requireRole("admin")	A middleware that checks the logged-in user has the "admin" role before allowing the request to continue.
+🎯
+Key Takeaway
+The Events API combines five CRUD endpoints with four advanced query features on top of the list endpoint:
+filtering
+by category, city, and date range,
+pagination
+using page and limit,
+sorting
+through a safe whitelist of fields, and case-insensitive
+text search
+with $regex. All of these work together in the same query, and populate() ensures the response includes full category and organizer details instead of raw IDs. Every write endpoint stays protected with requireAuth and requireRole("admin"), and every response keeps the same consistent shape.
+
+In the next task, we will build the Event registration system. See you in the next lesson.

@@ -49,7 +49,22 @@
           "name": "Get All Events",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/events"
+            "url": {
+              "raw": "{{baseUrl}}/api/events?search=&page=1&limit=10&sortBy=date&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "events"],
+              "query": [
+                { "key": "search", "value": "", "description": "Search in title/description" },
+                { "key": "category", "value": "", "description": "Filter by category ID" },
+                { "key": "city", "value": "", "description": "Filter by city" },
+                { "key": "startDate", "value": "", "description": "Start date filter" },
+                { "key": "endDate", "value": "", "description": "End date filter" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "date", "description": "date, capacity, or registrations" },
+                { "key": "order", "value": "asc", "description": "asc or desc" }
+              ]
+            }
           }
         },
         {
@@ -74,6 +89,36 @@
               "mode": "raw",
               "raw": "{\n  \"title\": \"New Event\",\n  \"description\": \"Event description\",\n  \"category\": \"categoryId\",\n  \"date\": \"2026-12-01T10:00:00\",\n  \"city\": \"Cairo\",\n  \"venue\": \"Test Venue\",\n  \"capacity\": 100\n}"
             }
+          }
+        },
+        {
+          "name": "Update Event (Admin)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/events/:id",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Event Title\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Event (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/events/:id",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
           }
         }
       ]
@@ -103,6 +148,19 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/registrations/my",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Cancel Registration",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/registrations/:id",
             "header": [
               {
                 "key": "Authorization",

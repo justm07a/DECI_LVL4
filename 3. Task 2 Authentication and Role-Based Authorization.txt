@@ -1,0 +1,389 @@
+
+🔐
+Authentication & Role-Based Authorization
+T2
+☰
+🌙
+Contents
+Introduction
+Setting Up app.js
+Utility Files: AppError & asyncHandler
+Central Error Handler
+Register Endpoint
+Login Endpoint
+Protecting Routes: requireAuth
+Role-Based Access: requireRole
+Testing & Summary
+🔐
+Backend Track – Node.js & Express
+T2
+Authentication and Role-Based Authorization
+In this task, you will build the full Authentication system for your backend project. This means building a safe way for users to register and log in, and a way to protect certain routes so that only logged-in users — or users with a specific role — can access them.
+
+You will use two important tools for this: bcrypt, which safely scrambles (hashes) passwords before they are stored, and JWT (JSON Web Token), which creates a signed token that proves who a user is on every request after they log in.
+
+💡
+What You Will Build
+By the end of this lesson, your project will have a working app.js setup, reusable error-handling utilities, a central error handler, a Register endpoint, a Login endpoint, and two middleware functions — requireAuth and requireRole — that protect your routes.
+
+In this lesson, you will learn how to:
+
+Set up app.js in the correct order, from environment variables to the error handler
+Build reusable utility files: AppError and asyncHandler
+Build a central error handler middleware that catches every kind of error in one place
+Build a secure Register endpoint that hashes passwords with bcrypt
+Build a secure Login endpoint that checks passwords and issues a JWT
+Build a requireAuth middleware that protects routes using the JWT
+Build a requireRole middleware that restricts routes to specific user roles
+Test the whole flow safely in Postman
+Before you build any endpoint, you must set up app.js in the correct order. Express runs your middleware top to bottom, so the order you write things in really matters.
+
+1. The Correct Order
+require('dotenv').config() must always be the very first line, so your environment variables are ready before anything else runs.
+Import Express and create the app.
+Add morgan for request logging.
+Add express.json() and express-mongo-sanitize() so the app can read JSON bodies safely.
+Mount your routes — every new route you build gets added here.
+Add a 404 handler for any URL that does not exist.
+Add the error handler — this must always be the last piece of middleware.
+Write a start() function that calls connectDB() and then app.listen().
+app.js — correct setup order
+require('dotenv').config();
+
+const express = require('express');
+const morgan  = require('morgan');
+const mongoSanitize = require('express-mongo-sanitize');
+const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorHandler');
+const authRoutes = require('./routes/authRoutes');
+
+const app = express();
+
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(mongoSanitize());
+
+app.use('/api/auth', authRoutes);
+// more routes will be mounted here later
+
+app.use((req, res, next) => {
+  res.status(404).json({ status: 'fail', message: 'Route not found' });
+});
+
+app.use(errorHandler);
+
+async function start() {
+  await connectDB();
+  app.listen(process.env.PORT, () => {
+    console.log(`Server running on port ${process.env.PORT}`);
+  });
+}
+
+start();
+Terminal — starting the server
+Node.js Terminal
+$ node app.js
+✓ MongoDB connected
+✓ Server running on port 5000
+// morgan will now log every incoming request
+⚠️
+Order Matters
+If the error handler is placed before your routes, Express will never reach it correctly. It must always be the
+last
+piece of middleware in the file.
+
+Before building any controller, create these two utility files inside a utils/ folder. They will be reused in almost every route you write from now on.
+
+1. utils/AppError.js
+AppError is a custom error class. It takes a message and a statusCode, and it automatically sets a status ("fail" or "error") and an isOperational flag — so the error handler can later tell the difference between an expected error and an unexpected bug.
+
+utils/AppError.js
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+module.exports = AppError;
+Example — throwing an AppError
+console.log(error)
+{
+  message: 'Email already in use',
+  statusCode: 400,
+  status: 'fail',
+  isOperational: true
+}
+2. utils/asyncHandler.js
+asyncHandler is a function that wraps any async controller function. If that function throws an error, asyncHandler automatically passes it to next() — so you never need to write repetitive try / catch blocks in every controller.
+
+utils/asyncHandler.js
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = asyncHandler;
+Behavior — no more repeated try/catch
+Controller using asyncHandler
+// If prisma/mongoose throws inside this function,
+// asyncHandler automatically calls next(error)
+
+✓ Error forwarded to errorHandler automatically
+Now create middleware/errorHandler.js — the central error handler. In Express, an error handler is a middleware function with 4 arguments instead of 3, and it must be the last middleware in the app.
+
+Your error handler must deal with these cases:
+
+Error Type	Cause	Status Code
+ValidationError	Mongoose schema validation failed	400
+CastError	Mongoose could not cast a value (e.g. bad ObjectId)	400 with a clear message
+Duplicate key (code 11000)	A unique field (like email) already exists	409
+AppError	An expected, operational error thrown in your code	uses the statusCode already inside it
+Any other error	Unexpected bug	500 with a generic message
+middleware/errorHandler.js
+function errorHandler(err, req, res, next) {
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Something went wrong';
+
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = Object.values(err.errors).map((e) => e.message).join(', ');
+  }
+
+  if (err.name === 'CastError') {
+    statusCode = 400;
+    message = `Invalid value for field: ${err.path}`;
+  }
+
+  if (err.code === 11000) {
+    statusCode = 409;
+    message = 'Duplicate field value. This record already exists.';
+  }
+
+  res.status(statusCode).json({
+    status: statusCode >= 500 ? 'error' : 'fail',
+    message,
+    // stack trace only shown in development mode
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+}
+
+module.exports = errorHandler;
+Postman — duplicate email response (409)
+Response Body
+{
+  status: 'fail',
+  message: 'Duplicate field value. This record already exists.'
+}
+
+409 Conflict
+📘
+Why hide the stack trace in production?
+A stack trace can reveal file paths and internal logic to attackers. That is why it is only included in the response when NODE_ENV is development — never in production.
+
+POST /api/auth/register creates a new user. This endpoint must:
+
+Hash the password with bcrypt before saving it — the password must never be stored as plain text.
+Return a clear error if the email is already registered.
+Return the user data along with a JWT token after registration succeeds.
+controllers/authController.js — register
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const AppError = require('../utils/AppError');
+const asyncHandler = require('../utils/asyncHandler');
+
+exports.register = asyncHandler(async (req, res, next) => {
+  const { name, email, password } = req.body;
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new AppError('Email is already registered', 400));
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role: 'user',
+  });
+
+  const token = jwt.sign(
+    { userId: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  res.status(201).json({
+    status: 'success',
+    token,
+    data: { id: user._id, name: user.name, email: user.email, role: user.role },
+  });
+});
+Postman — 201 Created
+User registered successfully.
+Response Body
+{
+  status: 'success',
+  token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...',
+  data: {
+    id: '665f1a...',
+    name: 'Sara Ahmed',
+    email: 'sara@email.com',
+    role: 'user'
+  }
+}
+💡
+Never store plain-text passwords
+bcrypt.hash(password, 12) turns the password into a scrambled string that cannot be reversed. Even if your database is ever leaked, the real passwords stay protected.
+
+POST /api/auth/login logs a user in. This endpoint must:
+
+Find the user by email, including the password field with select: '+password' (since it is hidden by default).
+Check the password with bcrypt.compare().
+Return a generic error message if the credentials are wrong — without revealing whether it was the email or the password that was incorrect.
+Return a JWT token containing the userId and role if the login succeeds.
+controllers/authController.js — login
+exports.login = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user) {
+    return next(new AppError('Invalid email or password', 401));
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    return next(new AppError('Invalid email or password', 401));
+  }
+
+  const token = jwt.sign(
+    { userId: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
+Postman — two possible outcomes
+Outcome A — correct credentials
+{ status: 'success', token: 'eyJhbGciOiJIUzI1...' }
+✓ 200 OK
+Outcome B — wrong password or email
+{ status: 'fail', message: 'Invalid email or password' }
+401 Unauthorized
+⚠️
+Keep the error message generic
+Returning the exact same message for "wrong email" and "wrong password" prevents attackers from figuring out which registered emails exist in your system.
+
+Create middleware/requireAuth.js to protect routes that need a logged-in user. This middleware must:
+
+Take the token from the Authorization header, using the Bearer scheme.
+Return 401 if there is no token.
+Verify the token with jwt.verify().
+Return 401 if the token is expired or invalid.
+If everything is valid, attach the user data to req.user and continue with next().
+middleware/requireAuth.js
+const jwt = require('jsonwebtoken');
+const AppError = require('../utils/AppError');
+
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new AppError('You must be logged in to access this route', 401));
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { userId, role }
+    next();
+  } catch (error) {
+    return next(new AppError('Invalid or expired token', 401));
+  }
+}
+
+module.exports = requireAuth;
+Postman — calling a protected route
+No Authorization header
+{ status: 'fail', message: 'You must be logged in to access this route' }
+401 Unauthorized
+Valid Bearer token
+// req.user is now available in the next handler
+req.user = { userId: '665f1a...', role: 'user' }
+✓ Access granted
+Create middleware/requireRole.js to control access based on the user's role. This middleware must:
+
+Accept one or more roles as parameters.
+Check that req.user.role is included in the allowed roles.
+Return 403 Forbidden if the role is not allowed.
+middleware/requireRole.js
+const AppError = require('../utils/AppError');
+
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    next();
+  };
+}
+
+module.exports = requireRole;
+Usage — protecting admin-only routes
+routes/eventRoutes.js
+// requireAuth runs first, then requireRole checks the role
+router.post('/events', requireAuth, requireRole('admin'), createEvent);
+A logged-in "user" tries to create an event
+{ status: 'fail', message: 'You do not have permission to perform this action' }
+403 Forbidden
+💡
+Use requireAuth and requireRole together
+Apply this pattern on any admin-only action — like creating, updating, or deleting events. requireAuth checks that the user is logged in first, and requireRole checks that they have the right permission.
+
+When you finish, test everything in Postman:
+
+Register a new user.
+Log in with that user.
+Try calling a protected route without a token — it should return 401.
+✅ Do
+Hash every password with bcrypt before saving it.
+Keep login error messages generic — never reveal which part was wrong.
+Put the error handler as the very last middleware in app.js.
+Use requireAuth before requireRole on protected admin routes.
+❌ Do Not
+Do not store passwords as plain text — ever.
+Do not reveal the stack trace to the client outside development mode.
+Do not skip await when checking passwords or verifying tokens.
+Do not forget the Bearer prefix when reading the Authorization header.
+🎯
+Key Takeaway
+You now have a complete authentication flow: passwords are hashed with
+bcrypt
+, sessions are handled with signed
+JWT
+tokens, and every protected route is guarded by
+requireAuth
+and, where needed,
+requireRole
+. Every error — expected or unexpected — flows into one central
+error handler
+, so your app never crashes silently.
+
+📘
+What's Next
+In the next task, you will build the complete
+Events API
+, using the authentication and role-based middleware you just built to protect its routes.

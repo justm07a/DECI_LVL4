@@ -1,0 +1,100 @@
+
+📡
+Final Project
+☰
+🌙
+Contents
+Introduction
+Review the Project Structure
+Review the Configuration Files
+Run the Project From Scratch
+Test the APIs on Postman
+Review the GitHub Repository
+Check the Deployment Link
+What You Need to Submit
+Final Reminder
+📦
+Second Semester Final Project
+Project Submission
+EventPulse API — Project Submission
+Congratulations — if you have reached this lesson, it means you have finished building the entire EventPulse API project, and you have already reviewed all the Tasks and the Project Rubric.
+
+But there is still one last step left — a step many people underestimate, even though it is one of the most important stages of any software project: Project Submission.
+
+💡
+Why submission matters
+In a real work environment, a project is not considered done just because it runs. It has to be delivered in an organized way that lets any developer or reviewer understand it and run it easily the first time. So before you press Submit, let's go through the final checklist together.
+
+Make sure every folder is in its correct place, and that the project is organized using the MVC structure you worked with throughout the whole project.
+
+Review the following folders:
+
+models
+controllers
+routes
+middleware
+utils
+config
+db
+Also make sure there are no test files, unused code, or files unrelated to the project left behind.
+
+Make sure a .env file exists locally on your machine, and that a .env.example file exists inside the project with the same variable names that are required — but without the real values.
+
+Also make sure your .gitignore file prevents .env and node_modules from being pushed to GitHub.
+
+⚠️
+Never commit real secrets
+Real environment values (database URLs, JWT secrets, API keys) must stay only in your local .env file, and never be pushed to the public repository.
+
+Run the project from the very beginning, as if you were opening it for the first time.
+
+Run the commands to install the packages.
+Run the seed script to fill the database with sample data.
+Start the server.
+Make sure the database connects successfully, and that the project runs without any errors.
+
+Open Postman and review the most important APIs:
+
+Auth
+Events
+Registrations
+Announcements
+💡
+This is usually tested first
+Make sure every endpoint works, and that the responses come back in the expected shape — this is usually the very first thing a reviewer will test.
+
+Make sure the repository name is correct: StudentID-EventPulse — for example, 12345-EventPulse.
+
+Make sure the version pushed is your latest version, that every project file is there, and that nothing is missing.
+
+Then review your README.md file — this is one of the most important files in the project. It must include:
+
+A short description of the project idea.
+The technologies you used.
+The steps to run the project.
+The deployment link.
+Open your deployment link on Vercel.
+
+Try the /health endpoint and make sure it returns status: ok.
+Try one or two endpoints on the deployed URL to confirm the API is working in the cloud.
+Make sure /api-docs opens and shows the Swagger documentation.
+GET /health
+status: ok — deployment is live
+Once everything is ready, you need to submit two things:
+
+Item	Example
+GitHub Repository Link	https://github.com/username/12345-EventPulse
+Deployed API Link (Vercel)	https://12345-eventpulse.vercel.app
+Upload them through the project submission link: https://deci.eyouthbusiness.com/final-project
+
+⚠️
+Double-check both links
+Before you press Submit, open both links yourself and make sure they open correctly.
+
+Remember, the goal of this project is not just to finish the Tasks. The real goal is to prove that you can build a complete Backend API, organize it, document it, and deliver it with the same quality any professional development team would expect.
+
+The reviewer will grade your project based on every requirement in the Project Rubric. Any requirement implemented fully and exactly as required earns (1). Any requirement that is missing, different from what was asked, or not working correctly earns (0).
+
+🎯
+Key Takeaway
+Do not rush the submission. Review your project one last time, make sure everything is ready, and then submit it with confidence that you are delivering a professional project that reflects everything you learned this semester. Good luck — we look forward to seeing your project at its best.

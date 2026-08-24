@@ -1,0 +1,272 @@
+
+🗂️
+EventPulse – Backend Foundation
+Task 1
+☰
+🌙
+Contents
+Introduction
+Content Information
+Key Terminology
+Mind Map
+External References
+🗂️
+EventPulse Graduation Project – Backend Development
+Task 1
+Project Architecture and Data Models
+Learn how to build the foundation of a real backend project. You will set up the MVC folder structure, configure environment variables, design Mongoose schemas for five different models, and create a seed script to fill your database with sample data — before writing a single route.
+
+In this task, you will build the complete foundation of the backend project — the folder structure, the data models (called Schemas), and the database connection. This is the most important part of the project, because every other task you build later depends on it.
+
+💡
+What is Project Architecture?
+Project architecture is the way you organize your code into folders and files before you start writing features. A well-organized backend project follows the
+MVC pattern
+(Model – View – Controller), which keeps your database logic, your business logic, and your routes completely separated. This makes the project easier to read, easier to debug, and easier for a whole team to work on together.
+
+EventPulse Backend Architecture
+Client
+Sends HTTP requests
+(Postman / Frontend)
+Express Server
+routes/ → controllers/
+middleware/ → utils/
+models/ (Mongoose Schemas)
+MongoDB
+Stores collections
+Users, Events, Categories
+Registrations, Messages
+MVC structure connects the client to the database through a clear, organized path
+In this task, you will learn how to:
+
+Set up a Node.js project with the correct naming convention
+Install and understand the role of each backend package
+Organize the project using the MVC folder structure
+Configure environment variables safely with .env
+Design five Mongoose Schemas: User, Category, Event, Registration, Message
+Understand references (ObjectId) between models
+Prevent duplicate registrations with a unique compound index
+Write a seed script to populate the database with sample data
+1. Project Setup
+Before writing any code, the project folder name must follow the required naming convention: StudentID-EventPulse — for example 12345-EventPulse. After that, initialize the project and install the required packages.
+
+Terminal — project setup
+npm init -y
+npm install express mongoose dotenv bcryptjs jsonwebtoken express-validator express-mongo-sanitize morgan
+Terminal — packages installed
+Node.js Terminal
+✓ package.json created
+✓ 8 packages added to node_modules
+// express, mongoose, dotenv, bcryptjs, jsonwebtoken,
+// express-validator, express-mongo-sanitize, morgan
+Package	Purpose
+express	The web framework used to build the server and routes
+mongoose	Connects the app to MongoDB and defines Schemas
+dotenv	Loads environment variables from the .env file
+bcryptjs	Encrypts (hashes) user passwords
+jsonwebtoken	Creates and verifies JWT tokens for authentication
+express-validator	Validates incoming request data
+express-mongo-sanitize	Protects the app from NoSQL injection attacks
+morgan	Logs incoming HTTP requests to the terminal
+2. The MVC Folder Structure
+Create the following folders in the root of the project. Each folder has one clear responsibility — this is the core idea of the MVC pattern.
+
+Terminal — creating folders
+mkdir models controllers routes middleware utils config
+File Explorer — resulting structure
+Project Root
+📁 models/
+📁 controllers/
+📁 routes/
+📁 middleware/
+📁 utils/
+📁 config/
+📄 .env
+📄 .env.example
+📄 seed.js
+📄 package.json
+
+✓ 6 folders created successfully
+Folder	Responsibility
+models/	Contains the Mongoose Schemas — the shape of your data
+controllers/	Contains the business logic — what happens on each request
+routes/	Contains the routes — which URL triggers which controller
+middleware/	Contains reusable functions that run between the request and the controller
+utils/	Contains helper tools like AppError and asyncHandler
+config/	Contains configuration files, like the database connection
+3. Environment Variables
+Create a .env file in the root of the project. This file stores sensitive values that should never be written directly in your code.
+
+.env — environment variables
+PORT=3000
+NODE_ENV=development
+MONGO_URI=mongodb://127.0.0.1:27017/eventpulse
+JWT_SECRET=a_long_random_string_no_one_can_guess
+JWT_EXPIRES_IN=7d
+Terminal — environment loaded
+Node.js Terminal
+// require('dotenv').config();
+✓ process.env.PORT = 3000
+✓ process.env.NODE_ENV = development
+✓ process.env.MONGO_URI loaded
+✓ process.env.JWT_SECRET loaded
+⚠️
+Never commit .env to GitHub
+Add .env to your .gitignore file immediately. Instead, create a .env.example file with the same keys but no real values — this documents what variables the project needs without exposing secrets.
+
+4. What Is a Mongoose Schema?
+A Schema defines the shape of a document inside a MongoDB collection — which fields it has, what type each field is, and any rules the field must follow (like required or unique). Mongoose turns a Schema into a Model, which is the object you actually use to create, read, update, and delete documents.
+
+5. User Schema
+models/user.model.js
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  name:     { type: String, required: true, trim: true },
+  email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true, select: false },
+  role:     { type: String, enum: ['attendee', 'admin'], default: 'attendee' }
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', userSchema);
+Terminal — model registered
+Model "User" registered successfully.
+Mongoose
+// collection created on first insert
+✓ users collection ready
+✓ unique index on "email" created
+6. Category Schema
+models/category.model.js
+const mongoose = require('mongoose');
+
+const categorySchema = new mongoose.Schema({
+  name:        { type: String, required: true, unique: true, trim: true },
+  description: { type: String, trim: true }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Category', categorySchema);
+Terminal — model registered
+Model "Category" registered successfully.
+Mongoose
+✓ categories collection ready
+✓ unique index on "name" created
+7. Event Schema
+The Event Schema uses two references (ObjectId with ref) — one pointing to the Category it belongs to, and one pointing to the User who organized it.
+
+models/event.model.js
+const mongoose = require('mongoose');
+
+const eventSchema = new mongoose.Schema({
+  title:       { type: String, required: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  category:    { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  date:        { type: Date, required: true },
+  city:        { type: String, required: true, trim: true },
+  venue:       { type: String, required: true, trim: true },
+  capacity:    { type: Number, required: true, min: 1 },
+  organizer:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Event', eventSchema);
+Terminal — model registered
+Model "Event" registered successfully.
+Mongoose
+✓ events collection ready
+// "category" references the Category collection
+// "organizer" references the User collection
+📘
+What does ref do?
+ref tells Mongoose which collection an ObjectId belongs to. This allows you to use .populate() later to automatically fetch the full related document instead of just its id. Population will be explained in detail in a future advanced lesson.
+
+8. Registration Schema
+A Registration links one attendee to one event. To prevent the same user from registering for the same event twice, we add a unique compound index on the pair of fields.
+
+models/registration.model.js
+const mongoose = require('mongoose');
+
+const registrationSchema = new mongoose.Schema({
+  event:    { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  attendee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+}, { timestamps: true });
+
+registrationSchema.index({ event: 1, attendee: 1 }, { unique: true });
+
+module.exports = mongoose.model('Registration', registrationSchema);
+Terminal — duplicate registration blocked
+First registration inserted successfully.
+Attempting the same registration again
+E11000 duplicate key error — event + attendee already exists
+✓ Double registration successfully prevented
+9. Message Schema
+models/message.model.js
+const mongoose = require('mongoose');
+
+const messageSchema = new mongoose.Schema({
+  event:  { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  text:   { type: String, required: true, trim: true }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Message', messageSchema);
+Terminal — model registered
+Model "Message" registered successfully.
+Mongoose
+✓ messages collection ready
+10. The Seed Script
+A seed script is a small program that fills your database with sample data automatically, so you do not have to add it by hand through Postman every time you reset the database.
+
+💡
+Delete in the correct order
+Before inserting new data, the script must clear old data first — and it must do so in an order that respects the references, so you never delete a document that another document still points to.
+
+Term	Definition
+MVC	Model – View – Controller. A pattern that separates data (models), request logic (controllers), and routing so each part has one clear job.
+Schema	A blueprint that defines the fields, types, and rules of a document stored in a MongoDB collection.
+Model	The object created from a Schema that you use to actually interact with a MongoDB collection (create, read, update, delete).
+ObjectId	MongoDB's unique identifier type, used to reference a document in another collection.
+ref	A Schema option that tells Mongoose which model an ObjectId field is pointing to.
+unique index	A rule on the database that prevents two documents from having the same value (or combination of values) in a field.
+.env file	A file that stores configuration values and secrets outside of your source code, loaded using the dotenv package.
+middleware	A function that runs between the incoming request and the final controller, often used for validation, authentication, or logging.
+JWT	JSON Web Token — a signed token used to verify a logged-in user without storing session data on the server.
+bcrypt	A library used to hash passwords so the real password is never stored in the database.
+seed script	A script that automatically fills the database with sample data for testing and development.
+timestamps	A Mongoose Schema option that automatically adds createdAt and updatedAt fields to every document.
+Project Architecture
+Setup
+→ StudentID-EventPulse naming convention
+→ npm init -y
+→ Install express, mongoose, dotenv, bcryptjs, jsonwebtoken, express-validator, express-mongo-sanitize, morgan
+MVC Folders
+→ models/ — Mongoose Schemas
+→ controllers/ — business logic
+→ routes/ — URL mapping
+→ middleware/ — pre-route functions
+→ utils/ — AppError, asyncHandler
+→ config/ — database connection
+Environment Variables
+→ PORT, NODE_ENV, MONGO_URI
+→ JWT_SECRET, JWT_EXPIRES_IN
+→ .env.example for documentation
+→ .env must be in .gitignore
+User Schema
+→ name, email (unique), password (select: false)
+→ role: attendee or admin
+Category Schema
+→ name (unique), description
+Event Schema
+→ title, description, date, city, venue, capacity
+→ category → ref: Category
+→ organizer → ref: User
+Registration Schema
+→ event → ref: Event
+→ attendee → ref: User
+→ unique compound index prevents double registration
+Message Schema
+→ event → ref: Event
+→ sender → ref: User
+→ text
+Seed Script
+→ Deletes old data in the correct order
+→ Creates 3+ categories, 4+ events, 1+ admin
+→ Verified using MongoDB Compass
